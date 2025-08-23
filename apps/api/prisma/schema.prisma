@@ -1,0 +1,406 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Auth Models (Better Auth)
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+
+  // Cricket betting relations
+  profile            UserProfile?
+  trades             Trade[]
+  walletTransactions WalletTransaction[]
+  positions          UserPosition[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// Cricket Betting Enums
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum SeriesType {
+  TEST
+  ODI
+  T20I
+  IPL
+  OTHER
+}
+
+enum MatchFormat {
+  TEST
+  ODI
+  T20
+  T10
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ResultType {
+  NORMAL
+  TIE
+  NO_RESULT
+}
+
+enum TossDecision {
+  BAT
+  BOWL
+}
+
+// Simplified for team win/loss only
+enum MarketCategory {
+  MATCH_RESULT // Only trading on match results
+}
+
+// Simplified to only team outcomes
+enum OutcomeType {
+  TEAM_WIN // Only team win outcomes
+}
+
+enum TradeType {
+  BACK
+  LAY
+}
+
+enum TradeStatus {
+  PENDING
+  MATCHED
+  PARTIALLY_MATCHED
+  CANCELLED
+  SETTLED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  REFUND
+  TRADE_SETTLEMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum PlayerType {
+  BATSMAN
+  BOWLER
+  ALLROUNDER
+  WICKETKEEPER
+}
+
+// Cricket Betting Models
+model UserProfile {
+  id            String    @id @default(cuid())
+  userId        String    @unique @map("user_id")
+  fullName      String?   @map("full_name") @db.VarChar(100)
+  phoneNumber   String?   @map("phone_number") @db.VarChar(20)
+  walletBalance Decimal   @default(0.00) @map("wallet_balance") @db.Decimal(10, 2)
+  kycStatus     KycStatus @default(PENDING) @map("kyc_status")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  teamName    String   @map("team_name") @db.VarChar(100)
+  country     String?  @db.VarChar(50)
+  teamLogoUrl String?  @map("team_logo_url")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  homeMatches Match[] @relation("TeamA")
+  awayMatches Match[] @relation("TeamB")
+  wonMatches  Match[] @relation("Winner")
+  tossWins    Match[] @relation("TossWinner")
+  players     Player[]
+  matchStats  MatchStat[]
+  // Team win outcomes
+  teamOutcomes MarketOutcome[]
+
+  @@map("teams")
+}
+
+model Series {
+  id         String     @id @default(cuid())
+  seriesName String     @map("series_name") @db.VarChar(200)
+  seriesType SeriesType @map("series_type")
+  startDate  DateTime?  @map("start_date") @db.Date
+  endDate    DateTime?  @map("end_date") @db.Date
+  isActive   Boolean    @default(true) @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  matches Match[]
+
+  @@map("series")
+}
+
+model Match {
+  id           String       @id @default(cuid())
+  seriesId     String?      @map("series_id")
+  teamAId      String       @map("team_a_id")
+  teamBId      String       @map("team_b_id")
+  matchFormat  MatchFormat  @map("match_format")
+  matchDate    DateTime     @map("match_date")
+  venue        String?      @db.VarChar(200)
+  matchStatus  MatchStatus  @default(SCHEDULED) @map("match_status")
+  winnerTeamId String?      @map("winner_team_id")
+  resultType   ResultType?  @map("result_type")
+  tossWinnerId String?      @map("toss_winner_id")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  series       Series?     @relation(fields: [seriesId], references: [id])
+  teamA        Team        @relation("TeamA", fields: [teamAId], references: [id])
+  teamB        Team        @relation("TeamB", fields: [teamBId], references: [id])
+  winnerTeam   Team?       @relation("Winner", fields: [winnerTeamId], references: [id])
+  tossWinner   Team?       @relation("TossWinner", fields: [tossWinnerId], references: [id])
+  markets      Market[]
+  matchStats   MatchStat[]
+
+  @@map("matches")
+}
+
+// Simplified MarketType - only match results
+model MarketType {
+  id             String         @id @default(cuid())
+  marketName     String         @map("market_name") @db.VarChar(100) // e.g., "Match Winner"
+  marketCategory MarketCategory @default(MATCH_RESULT) @map("market_category")
+  description    String?        @default("Bet on which team will win the match")
+  isActive       Boolean        @default(true) @map("is_active")
+
+  // Relations
+  markets Market[]
+
+  @@map("market_types")
+}
+
+model Market {
+  id                String   @id @default(cuid())
+  matchId           String   @map("match_id")
+  marketTypeId      String   @map("market_type_id")
+  marketTitle       String   @map("market_title") @db.VarChar(200) // e.g., "India vs Australia - Match Winner"
+  marketDescription String?  @map("market_description")
+  isSuspended       Boolean  @default(false) @map("is_suspended") // Admin can manually suspend trading
+  settlementTime    DateTime? @map("settlement_time")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  match      Match           @relation(fields: [matchId], references: [id])
+  marketType MarketType      @relation(fields: [marketTypeId], references: [id])
+  outcomes   MarketOutcome[]
+  positions  UserPosition[]
+
+  @@map("markets")
+}
+
+model MarketOutcome {
+  id          String      @id @default(cuid())
+  marketId    String      @map("market_id")
+  outcomeName String      @map("outcome_name") @db.VarChar(200) // e.g., "India Win", "Australia Win"
+  outcomeType OutcomeType @default(TEAM_WIN) @map("outcome_type")
+  teamId      String      @map("team_id") // Always references a team for win/loss
+  isWinner    Boolean?    @map("is_winner") // Set after match completion
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  market    Market         @relation(fields: [marketId], references: [id])
+  team      Team           @relation(fields: [teamId], references: [id]) // Direct team reference
+  odds      Odds[]
+  trades    Trade[]
+  positions UserPosition[]
+
+  @@map("market_outcomes")
+}
+
+model Odds {
+  id              String   @id @default(cuid())
+  outcomeId       String   @map("outcome_id")
+  backPrice       Decimal  @map("back_price") @db.Decimal(6, 2) // Price to back the team
+  layPrice        Decimal  @map("lay_price") @db.Decimal(6, 2)  // Price to lay the team
+  backVolume      Decimal  @default(0) @map("back_volume") @db.Decimal(12, 2)
+  layVolume       Decimal  @default(0) @map("lay_volume") @db.Decimal(12, 2)
+  lastTradedPrice Decimal? @map("last_traded_price") @db.Decimal(6, 2)
+  totalMatched    Decimal  @default(0) @map("total_matched") @db.Decimal(15, 2)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  outcome MarketOutcome @relation(fields: [outcomeId], references: [id])
+
+  @@map("odds")
+}
+
+model Trade {
+  id              String      @id @default(cuid())
+  userId          String      @map("user_id")
+  outcomeId       String      @map("outcome_id")
+  tradeType       TradeType   @map("trade_type") // BACK (betting on team to win) or LAY (betting against team)
+  stakeAmount     Decimal     @map("stake_amount") @db.Decimal(10, 2)
+  odds            Decimal     @db.Decimal(6, 2)
+  potentialProfit Decimal     @map("potential_profit") @db.Decimal(10, 2)
+  potentialLoss   Decimal     @map("potential_loss") @db.Decimal(10, 2)
+  tradeStatus     TradeStatus @default(PENDING) @map("trade_status")
+  matchedAmount   Decimal     @default(0) @map("matched_amount") @db.Decimal(10, 2)
+  profitLoss      Decimal?    @map("profit_loss") @db.Decimal(10, 2)
+  placedAt        DateTime    @default(now()) @map("placed_at")
+  matchedAt       DateTime?   @map("matched_at")
+  settledAt       DateTime?   @map("settled_at")
+
+  // Relations
+  user    User          @relation(fields: [userId], references: [id])
+  outcome MarketOutcome @relation(fields: [outcomeId], references: [id])
+
+  @@map("trades")
+}
+
+model WalletTransaction {
+  id              String            @id @default(cuid())
+  userId          String            @map("user_id")
+  transactionType TransactionType   @map("transaction_type")
+  amount          Decimal           @db.Decimal(10, 2)
+  balanceBefore   Decimal           @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter    Decimal           @map("balance_after") @db.Decimal(10, 2)
+  referenceId     String?           @map("reference_id") // trade_id for trade-related transactions
+  description     String?
+  status          TransactionStatus @default(COMPLETED)
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("wallet_transactions")
+}
+
+model UserPosition {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  marketId        String   @map("market_id")
+  outcomeId       String   @map("outcome_id")
+  totalBackStake  Decimal  @default(0) @map("total_back_stake") @db.Decimal(10, 2)  // Total amount backed on team
+  totalLayStake   Decimal  @default(0) @map("total_lay_stake") @db.Decimal(10, 2)   // Total amount laid against team
+  averageBackOdds Decimal? @map("average_back_odds") @db.Decimal(6, 2)
+  averageLayOdds  Decimal? @map("average_lay_odds") @db.Decimal(6, 2)
+  potentialProfit Decimal  @default(0) @map("potential_profit") @db.Decimal(10, 2)  // If team wins
+  potentialLoss   Decimal  @default(0) @map("potential_loss") @db.Decimal(10, 2)    // If team loses
+  currentPnl      Decimal  @default(0) @map("current_pnl") @db.Decimal(10, 2)
+  isActive        Boolean  @default(true) @map("is_active")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user    User          @relation(fields: [userId], references: [id])
+  market  Market        @relation(fields: [marketId], references: [id])
+  outcome MarketOutcome @relation(fields: [outcomeId], references: [id])
+
+  @@unique([userId, outcomeId])
+  @@map("user_positions")
+}
+
+model Player {
+  id         String     @id @default(cuid())
+  playerName String     @map("player_name") @db.VarChar(100)
+  teamId     String?    @map("team_id")
+  playerType PlayerType @map("player_type")
+  isActive   Boolean    @default(true) @map("is_active")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  team Team? @relation(fields: [teamId], references: [id])
+
+  @@map("players")
+}
+
+model MatchStat {
+  id            String  @id @default(cuid())
+  matchId       String  @map("match_id")
+  teamId        String  @map("team_id")
+  runsScored    Int     @default(0) @map("runs_scored")
+  wicketsLost   Int     @default(0) @map("wickets_lost")
+  oversPlayed   Decimal @default(0) @map("overs_played") @db.Decimal(4, 1)
+  extras        Int     @default(0)
+  inningsNumber Int     @map("innings_number")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  match Match @relation(fields: [matchId], references: [id])
+  team  Team  @relation(fields: [teamId], references: [id])
+
+  @@map("match_stats")
+}
