@@ -1,17 +1,22 @@
 import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
-import env from "./utils/validateEnv";
 import { z } from "zod";
 import cors from "cors";
 import createHttpError, { isHttpError } from "http-errors";
 import morgan from "morgan";
 
+import { auth } from "./lib/auth/auth";
+import { toNodeHandler } from "better-auth/node";
+
+import env from "./utils/validateEnv";
+
 const app = express();
 
 app.use(morgan("dev"));
+app.use("/api/auth/*", toNodeHandler(auth));
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: env.BETTER_AUTH_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
