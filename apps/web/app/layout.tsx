@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import Overlay from "components/Overlay";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,8 +19,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.className}`}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${geistSans.className}`}>
+        <Overlay />
+        {children}
+      </body>
     </html>
   );
 }
