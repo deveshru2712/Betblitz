@@ -1,6 +1,6 @@
 export default function Overlay() {
   return (
-    <div className="fixed inset-0 w-full h-full bg-black pointer-events-none z-0">
+    <div className="fixed inset-0 w-full h-full bg-black pointer-events-none -z-10">
       <div
         className="absolute top-0 right-0 w-full h-full opacity-80"
         style={{
