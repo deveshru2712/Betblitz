@@ -19,23 +19,22 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingDown } from "lucide-react";
 
 const chartData = [
-  { month: "January", desktop: 186, mobile: 87 },
-  { month: "February", desktop: 305, mobile: 163 },
-  { month: "March", desktop: 237, mobile: 142 },
-  { month: "April", desktop: 73, mobile: 195 },
-  { month: "May", desktop: 209, mobile: 118 },
-  { month: "June", desktop: 214, mobile: 231 },
+  { over: "5", desktop: 186, mobile: 87 },
+  { over: "8", desktop: 305, mobile: 163 },
+  { over: "13", desktop: 237, mobile: 142 },
+  { over: "17", desktop: 73, mobile: 195 },
+  { over: "20", desktop: 209, mobile: 118 },
+  // { over: "June", desktop: 214, mobile: 231 },
 ];
 
-// Use actual color values instead of CSS variables
 const chartConfig = {
   desktop: {
-    label: "Desktop",
-    color: "#2563eb", // Blue color for desktop
+    label: "TeamA",
+    color: "var(--chart-2)",
   },
   mobile: {
-    label: "Mobile",
-    color: "#8b5cf6", // Purple color for mobile
+    label: "TeamB",
+    color: "var(--chart-5)",
   },
 } satisfies ChartConfig;
 
@@ -67,7 +66,7 @@ export function DottedMultiLineChart() {
           >
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey="over"
               tickLine={false}
               axisLine={false}
               tickMargin={8}

@@ -19,7 +19,7 @@ export default function Navbar() {
 
   return (
     <div
-      className={`w-full ${isClicked ? "bg-black" : "bg-transparent"} fixed z-10 px-4 sm:px-8 py-6`}
+      className={`w-full ${isClicked ? "bg-black" : "bg-transparent"} backdrop-blur-md fixed z-50 px-4 sm:px-8 py-6`}
     >
       <nav className="max-w-6xl mx-auto text-neutral-200 flex justify-between items-center">
         <Link
