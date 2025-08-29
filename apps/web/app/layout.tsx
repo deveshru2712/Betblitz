@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import Overlay from "components/Overlay";
-import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import "./globals.css";
+import Overlay from "components/Overlay";
+import { ReactLenis } from "@/utils/lenis";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,17 +22,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className}`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Overlay />
-          {children}
-        </ThemeProvider>
-      </body>
+      <ReactLenis root>
+        <body className={`${geistSans.className}`}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Overlay />
+            {children}
+          </ThemeProvider>
+        </body>
+      </ReactLenis>
     </html>
   );
 }

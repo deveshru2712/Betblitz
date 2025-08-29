@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MenuIcon, X } from "lucide-react";
 import { useState } from "react";
+import { motion } from "motion/react";
 
 export default function Navbar() {
   const [isClicked, setIsClicked] = useState(false);
@@ -18,7 +19,10 @@ export default function Navbar() {
   };
 
   return (
-    <div
+    <motion.div
+      initial={{ y: -400 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.9 }}
       className={`w-full ${isClicked ? "bg-black" : "bg-transparent"} backdrop-blur-md fixed z-50 px-4 sm:px-8 py-6`}
     >
       <nav className="max-w-6xl mx-auto text-neutral-200 flex justify-between items-center">
@@ -140,6 +144,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

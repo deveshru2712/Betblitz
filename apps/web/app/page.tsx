@@ -1,5 +1,7 @@
+"use client";
 import Navbar from "@/components/Navbar";
 import { DottedMultiLineChart } from "@/components/ui/dotted-multi-line";
+import { motion } from "motion/react";
 
 export default function Home() {
   return (
@@ -8,7 +10,12 @@ export default function Home() {
       <div className="relative z-30 mt-35 md:mt-25 min-h-screen">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row px-4 sm:px-6 md:px-8">
           {/* text container */}
-          <div className="flex flex-col flex-1 md:py-20 py-6 sm:py-8 text-neutral-200 gap-3 sm:gap-4 md:gap-6">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 1 }}
+            className="flex flex-col flex-1 md:py-20 py-6 sm:py-8 text-neutral-200 gap-3 sm:gap-4 md:gap-6"
+          >
             <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl leading-tight">
               Trade Sports Options Like a <span className="text-sec">Pro.</span>
             </h1>
@@ -27,16 +34,21 @@ export default function Home() {
                 Learn More
               </button>
             </div>
-          </div>
+          </motion.div>
 
           {/* chart container */}
-          <div className="flex-1 md:py-16 py-6 sm:py-8 flex items-center justify-center md:ml-6">
+          <motion.div
+            initial={{ x: 1000 }}
+            animate={{ x: 0 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className="flex-1 md:py-16 py-6 sm:py-8 flex items-center justify-center md:ml-6"
+          >
             <div className="w-full max-w-sm sm:max-w-md md:max-w-lg">
               <div className="aspect-square md:aspect-auto">
                 <DottedMultiLineChart />
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </main>
